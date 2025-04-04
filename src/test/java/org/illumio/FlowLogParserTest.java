@@ -1,7 +1,6 @@
 package org.illumio;
 
 import org.illumio.data.*;
-import org.illumio.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -25,10 +24,6 @@ class FlowLogParserTest {
         tempProtocolFile = new File(tempDir, "protocol_numbers.csv");
         tempOutputFile = new File(tempDir, "output.txt");
 
-        Constants.PROTOCOL_NUMBERS_FILE_PATH = tempProtocolFile.getAbsolutePath();
-        Constants.OUTPUT_FILE_PATH = tempOutputFile.getAbsolutePath();
-        Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH = new File(tempDir, "last_updated.txt").getAbsolutePath();
-
         parser.setProtocolMap(new HashMap<>());
         parser.setTagMap(new HashMap<>());
         parser.setTagCountMap(new HashMap<>());
@@ -43,7 +38,7 @@ class FlowLogParserTest {
             17,udp""";
         Files.writeString(tempProtocolFile.toPath(), csvContent);
 
-        parser.loadProtocolMap();
+        parser.loadProtocolMap(tempProtocolFile.getAbsolutePath());
 
         assertEquals(2, parser.getProtocolMap().size());
         assertEquals("tcp", parser.getProtocolMap().get(6));

@@ -83,8 +83,7 @@ public class FlowLogParser {
         }
     }
 
-    void loadProtocolMap() {
-        String protocolNumbersFilePath = Constants.PROTOCOL_NUMBERS_FILE_PATH;
+    void loadProtocolMap(String protocolNumbersFilePath) {
         protocolMap = new HashMap<>(340); // 255 standard protocols (with 0.75 load factor)
 
         try (BufferedReader br = new BufferedReader(new FileReader(protocolNumbersFilePath))) {
@@ -219,7 +218,7 @@ public class FlowLogParser {
         flowLogParser.downloadProtocolNumbersCSV();
 
         System.out.println("\nLoading the Protocol Number to Keyword map onto memory.");
-        flowLogParser.loadProtocolMap();
+        flowLogParser.loadProtocolMap(Constants.PROTOCOL_NUMBERS_FILE_PATH);
         flowLogParser.postTimeTaken();
 
         System.out.println("\nLoading the Tag lookup table onto memory.");
