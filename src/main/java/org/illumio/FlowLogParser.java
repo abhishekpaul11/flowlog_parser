@@ -225,7 +225,7 @@ public class FlowLogParser {
         flowLogParser.loadTagLookup(tagLookupFilePath);
         flowLogParser.postTimeTaken();
 
-        // max size of tagCountMap would be same as tagMap (if all tags are unique) + 1 for untagged
+        // max size of tagCountMap would be same as tagMap (if all tags are unique and present) + 1 for untagged
         flowLogParser.tagCountMap = new HashMap<>(flowLogParser.tagMap.size() + 1, 1);
 
         // flow log file can go up to 10 mb (would need max 1 resize with a load factor of 0.75)
