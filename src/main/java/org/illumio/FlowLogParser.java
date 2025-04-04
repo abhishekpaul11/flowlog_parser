@@ -21,6 +21,10 @@ public class FlowLogParser {
     private Map<String, Long> tagCountMap;
     private Map<PortProtocolPair, Long> portProtocolPairCountMap;
 
+    // for tracking the time taken for each step
+    private long timeCheckpoint;
+    private long totalTime;
+
     private void downloadProtocolNumbersCSV() {
         String lastUpdatedProtocolNumbers = Utils.loadTimestamp(Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH);
 
@@ -32,6 +36,7 @@ public class FlowLogParser {
             boolean isSuccess = FileDownloader.download(Constants.PROTOCOL_NUMBERS_CSV_DOWNLOAD_URL, Constants.PROTOCOL_NUMBERS_FILE_PATH);
             if (isSuccess) {
                 Utils.persistTimestamp(Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH);
+                postTimeTaken();
             }
             else {
                 if (lastUpdatedProtocolNumbers != null) {
@@ -124,9 +129,8 @@ public class FlowLogParser {
         portProtocolPairCountMap.put(portProtocolPair, portProtocolPairCountMap.getOrDefault(portProtocolPair, 0L) + 1);
     }
 
-    private void persistProcessedOutput(String outputFilePath){
+    private boolean persistProcessedOutput(String outputFilePath){
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
-
             writer.write("Tag Counts:\n");
             if (tagCountMap.isEmpty()) {
                 writer.write("No matching tags found.\n");
@@ -146,10 +150,19 @@ public class FlowLogParser {
                 PortProtocolPair pair = entry.getKey();
                 writer.write(pair.getDestinationPort() + "," + pair.getProtocol() + "," + entry.getValue() + "\n");
             }
-
+            return true;
         } catch (IOException e) {
             System.err.println("Error writing to output file: " + e.getMessage());
+            return false;
         }
+    }
+
+    public void postTimeTaken() {
+        long currentTime = System.currentTimeMillis();
+        long timeTaken = (currentTime - timeCheckpoint);
+        System.out.println("Time taken: " + timeTaken / 1000.0 + "s");
+        timeCheckpoint = currentTime;
+        totalTime += timeTaken;
     }
 
     public static void main(String[] args) {
@@ -164,9 +177,19 @@ public class FlowLogParser {
 
         FlowLogParser flowLogParser = new FlowLogParser();
 
+        flowLogParser.totalTime = 0;
+        flowLogParser.timeCheckpoint = System.currentTimeMillis();
+
+        System.out.println("\nChecking if latest Protocol Numbers need to be downloaded.");
         flowLogParser.downloadProtocolNumbersCSV();
+
+        System.out.println("\nLoading the Protocol Number to Keyword map onto memory.");
         flowLogParser.loadProtocolMap();
+        flowLogParser.postTimeTaken();
+
+        System.out.println("\nLoading the Tag lookup table onto memory.");
         flowLogParser.loadTagLookup(tagLookupFilePath);
+        flowLogParser.postTimeTaken();
 
         // max size of tagCountMap would be same as tagMap (if all tags are unique) + 1 for untagged
         flowLogParser.tagCountMap = new HashMap<>(flowLogParser.tagMap.size() + 1, 1);
@@ -174,6 +197,7 @@ public class FlowLogParser {
         // flow log file can go up to 10 mb (would need max 1 resize with a load factor of 0.75)
         flowLogParser.portProtocolPairCountMap = new HashMap<>(64667);
 
+        System.out.println("\nProcessing the data to generate the output metrics.");
         try (BufferedReader br = new BufferedReader(new FileReader(flowLogsFilePath))) {
             String line;
 
@@ -212,7 +236,13 @@ public class FlowLogParser {
         }
 
         if (!flowLogParser.portProtocolPairCountMap.isEmpty()) {
-            flowLogParser.persistProcessedOutput(Constants.OUTPUT_FILE_PATH);
+            boolean isSuccess = flowLogParser.persistProcessedOutput(Constants.OUTPUT_FILE_PATH);
+            if (isSuccess) {
+                flowLogParser.postTimeTaken();
+
+                System.out.println("\nOutput file successfully generated at /src/main/outputs/output.txt");
+                System.out.println("Total time taken: " + flowLogParser.totalTime / 1000.0 + "s");
+            }
         }
         else {
             System.err.println("Failed to generate the output file. Please ensure the input files are passed correctly.");
