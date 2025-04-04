@@ -1,9 +1,6 @@
 package org.illumio;
 
-import org.illumio.data.Action;
-import org.illumio.data.FlowLog;
-import org.illumio.data.LogStatus;
-import org.illumio.data.PortProtocolPair;
+import org.illumio.data.*;
 import org.illumio.utils.Constants;
 import org.illumio.utils.FileDownloader;
 import org.illumio.utils.Utils;
@@ -16,9 +13,9 @@ import java.util.Map;
 public class FlowLogParser {
 
     private Map<Integer, String> protocolMap;
-    private Map<PortProtocolPair, String> tagMap;
+    private Map<PortProtocolPair, Tag> tagMap;
 
-    private Map<String, Long> tagCountMap;
+    private Map<Tag, Long> tagCountMap;
     private Map<PortProtocolPair, Long> portProtocolPairCountMap;
 
     // for tracking the time taken for each step
@@ -97,7 +94,7 @@ public class FlowLogParser {
                         try {
                             int destinationPort = Integer.parseInt(values[0].trim());
                             String protocol = values[1].trim().toLowerCase(Locale.ROOT);
-                            String tag = values[2].trim();
+                            Tag tag = new Tag(values[2].trim());
 
                             tagMap.put(new PortProtocolPair(destinationPort, protocol), tag);
                         } catch (NumberFormatException e) {
@@ -117,13 +114,13 @@ public class FlowLogParser {
         String protocol = protocolMap.getOrDefault(flowLog.getProtocol(), "");
 
         if (protocol.isEmpty()) {
-            System.err.println("Invalid protocol: " + protocol + ". Skipping log.");
+            System.err.println("Invalid protocol: " + flowLog.getProtocol() + ". Skipping log.");
             return;
         }
 
         PortProtocolPair portProtocolPair = new PortProtocolPair(destinationPort, protocol);
 
-        String tag = tagMap.getOrDefault(portProtocolPair, "Untagged");
+        Tag tag = tagMap.getOrDefault(portProtocolPair, new Tag("Untagged"));
         tagCountMap.put(tag, tagCountMap.getOrDefault(tag, 0L) + 1);
 
         portProtocolPairCountMap.put(portProtocolPair, portProtocolPairCountMap.getOrDefault(portProtocolPair, 0L) + 1);
@@ -137,8 +134,14 @@ public class FlowLogParser {
             }
             else {
                 writer.write("Tag,Count\n");
-                for (Map.Entry<String, Long> entry : tagCountMap.entrySet()) {
-                    writer.write(entry.getKey() + "," + entry.getValue() + "\n");
+                for (Map.Entry<Tag, Long> entry : tagCountMap.entrySet()) {
+                    if (entry.getKey().original().equalsIgnoreCase("Untagged")) {
+                        continue; // to ensure Untagged is listed at the end
+                    }
+                    writer.write(entry.getKey().original() + "," + entry.getValue() + "\n");
+                }
+                if (tagCountMap.getOrDefault(new Tag("Untagged"), 0L) > 0) {
+                    writer.write("Untagged," + tagCountMap.get(new Tag("Untagged")) + "\n");
                 }
             }
 
