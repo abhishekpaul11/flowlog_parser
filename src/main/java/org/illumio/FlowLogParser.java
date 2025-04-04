@@ -22,7 +22,39 @@ public class FlowLogParser {
     private long timeCheckpoint;
     private long totalTime;
 
-    private void downloadProtocolNumbersCSV() {
+    Map<Integer, String> getProtocolMap() {
+        return protocolMap;
+    }
+
+    void setProtocolMap(Map<Integer, String> protocolMap) {
+        this.protocolMap = protocolMap;
+    }
+
+    Map<PortProtocolPair, Tag> getTagMap() {
+        return tagMap;
+    }
+
+    void setTagMap(Map<PortProtocolPair, Tag> tagMap) {
+        this.tagMap = tagMap;
+    }
+
+    Map<Tag, Long> getTagCountMap() {
+        return tagCountMap;
+    }
+
+    void setTagCountMap(Map<Tag, Long> tagCountMap) {
+        this.tagCountMap = tagCountMap;
+    }
+
+    Map<PortProtocolPair, Long> getPortProtocolPairCountMap() {
+        return portProtocolPairCountMap;
+    }
+
+    void setPortProtocolPairCountMap(Map<PortProtocolPair, Long> portProtocolPairCountMap) {
+        this.portProtocolPairCountMap = portProtocolPairCountMap;
+    }
+
+    void downloadProtocolNumbersCSV() {
         String lastUpdatedProtocolNumbers = Utils.loadTimestamp(Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH);
 
         if (lastUpdatedProtocolNumbers == null) {
@@ -51,7 +83,7 @@ public class FlowLogParser {
         }
     }
 
-    private void loadProtocolMap() {
+    void loadProtocolMap() {
         String protocolNumbersFilePath = Constants.PROTOCOL_NUMBERS_FILE_PATH;
         protocolMap = new HashMap<>(340); // 255 standard protocols (with 0.75 load factor)
 
@@ -79,7 +111,7 @@ public class FlowLogParser {
         }
     }
 
-    private void loadTagLookup(String tagLookupFilePath) {
+    void loadTagLookup(String tagLookupFilePath) {
         try (BufferedReader brCount = new BufferedReader(new FileReader(tagLookupFilePath))) {
             tagMap = new HashMap<>((int) brCount.lines().count(), 1); // setting initial capacity based on the number of tag mappings
 
@@ -109,7 +141,7 @@ public class FlowLogParser {
         }
     }
 
-    private void processFlowLog(FlowLog flowLog) {
+    void processFlowLog(FlowLog flowLog) {
         int destinationPort = flowLog.getDestinationPort();
         String protocol = protocolMap.getOrDefault(flowLog.getProtocol(), "");
 
@@ -126,7 +158,7 @@ public class FlowLogParser {
         portProtocolPairCountMap.put(portProtocolPair, portProtocolPairCountMap.getOrDefault(portProtocolPair, 0L) + 1);
     }
 
-    private boolean persistProcessedOutput(String outputFilePath){
+    boolean persistProcessedOutput(String outputFilePath){
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
             writer.write("Tag Counts:\n");
             if (tagCountMap.isEmpty()) {
@@ -160,7 +192,7 @@ public class FlowLogParser {
         }
     }
 
-    public void postTimeTaken() {
+    void postTimeTaken() {
         long currentTime = System.currentTimeMillis();
         long timeTaken = (currentTime - timeCheckpoint);
         System.out.println("Time taken: " + timeTaken / 1000.0 + "s");
@@ -205,7 +237,7 @@ public class FlowLogParser {
             String line;
 
             while ((line = br.readLine()) != null) {
-                String[] values = line.split("\\s+");;
+                String[] values = line.split("\\s+");
 
                 if (values.length >= 14) {
                     try {
