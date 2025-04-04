@@ -65,7 +65,7 @@ For Windows:
 gradlew.bat clean
 ```
 
-For MacOC and Linux:
+For MacOS and Linux:
 ```bash
 ./gradlew clean
 ```
@@ -77,7 +77,7 @@ For Windows:
 gradlew.bat build
 ```
 
-For MacOC and Linux:
+For MacOS and Linux:
 ```bash
 ./gradlew build
 ```
@@ -91,7 +91,7 @@ For Windows:
 java -jar build\libs\flowlog_parser-1.0-SNAPSHOT.jar <path\to\flow-logs-file> <path\to\tag-lookup-file>
 ```
 
-For MacOC and Linux:
+For MacOS and Linux:
 ```bash
 java -jar build/libs/flowlog_parser-1.0-SNAPSHOT.jar <path/to/flow-logs-file> <path/to/tag-lookup-file>
 ```
@@ -103,7 +103,7 @@ For Windows:
 gradlew.bat run --args="<path\to\flow-logs-file> <path\to\tag-lookup-file>"
 ```
 
-For MacOC and Linux:
+For MacOS and Linux:
 ```bash
 ./gradlew run --args="<path/to/flow-logs-file> <path/to/tag-lookup-file>"
 ```
@@ -119,7 +119,7 @@ For Windows:
 gradlew.bat test
 ```
 
-For MacOC and Linux:
+For MacOS and Linux:
 ```bash
 ./gradlew test
 ```
@@ -137,10 +137,10 @@ call everytime the project is run. Hence, the data is refreshed once every 7 day
 3. We use the [LogStatus](/src/main/java/org/illumio/data/LogStatus.java) and [Action](/src/main/java/org/illumio/data/Action.java) enums for those fields in a Flow Log.
 4. We are using the [PortProtocolPair](/src/main/java/org/illumio/data/PortProtocolPair.java) data class to capture a port and protocol combination. We have overridden equals() and hashCode() methods, to ensure two different objects with same port and protocol fields are considered equal for mapping count purposes as well as put into the same hash bucket when using a hashMap.
 5. We are using the [Tag](/src/main/java/org/illumio/data/Tag.java) record class to identify a specific tag. It has an original field which captures the actual tag text (prior to making it lowercase) and uses that for the output. Here too, the equals() and the hashCode() methods are overridden to ensure two Tags are matched **case insensitively**.
-6. In the [FlowLogParser](/src/main/java/org/illumio/FlowLogParser.java) class, we use the [protocolMap]() to store the protocol number to keyword mapping. It has an initial capacity of 340 (255 standard protocols * 0.75 load factor) to ensure there's no resizing and hence no delays.
-7. We use the [tagMap]() to store the port/protocol combination to tag mapping from the tag lookup table. It has an initial capacity of the number of rows in the lookup table with a load factor of 1 to ensure there's no resizing and hence no delays. It can safely and efficiently handle upto 10,000 mappings as mentioned in the specs.
-8. We use the [tagCountMap]() to store the count for each tag. It's initial capacity is one more than that of tagMap (max size of tagCountMap can be same as tagMap, if all tags are unique and present + 1 for "Untagged") with a load factor of 1, to ensure there's no resizing and hence no delays.
-9. We use the [portProtocolPairCountMap]() to store the count for each port/protocol combination. It has an initial capacity of 64667. We arrive at this number by estimating the size of each log from the data type of its individual elements, which comes to around 108 bytes per flow log.
+6. In the [FlowLogParser](/src/main/java/org/illumio/FlowLogParser.java) class, we use the [protocolMap](https://github.com/abhishekpaul11/flowlog_parser/blob/c3f49a39e863fab945111f7d1662436f83eba4a8/src/main/java/org/illumio/FlowLogParser.java#L87C9-L87C92) to store the protocol number to keyword mapping. It has an initial capacity of 340 (255 standard protocols * 0.75 load factor) to ensure there's no resizing and hence no delays.
+7. We use the [tagMap](https://github.com/abhishekpaul11/flowlog_parser/blob/c3f49a39e863fab945111f7d1662436f83eba4a8/src/main/java/org/illumio/FlowLogParser.java#L115C13-L115C134) to store the port/protocol combination to tag mapping from the tag lookup table. It has an initial capacity of the number of rows in the lookup table with a load factor of 1 to ensure there's no resizing and hence no delays. It can safely and efficiently handle upto 10,000 mappings as mentioned in the specs.
+8. We use the [tagCountMap](https://github.com/abhishekpaul11/flowlog_parser/blob/c3f49a39e863fab945111f7d1662436f83eba4a8/src/main/java/org/illumio/FlowLogParser.java#L229C9-L229C87) to store the count for each tag. It's initial capacity is one more than that of tagMap (max size of tagCountMap can be same as tagMap, if all tags are unique and present + 1 for "Untagged") with a load factor of 1, to ensure there's no resizing and hence no delays.
+9. We use the [portProtocolPairCountMap](https://github.com/abhishekpaul11/flowlog_parser/blob/c3f49a39e863fab945111f7d1662436f83eba4a8/src/main/java/org/illumio/FlowLogParser.java#L232C9-L232C71) to store the count for each port/protocol combination. It has an initial capacity of 64667. We arrive at this number by estimating the size of each log from the data type of its individual elements, which comes to around 108 bytes per flow log.
 It's given in the spec sheet the flow log file can go upto 10 mb, hence we can have a maximum of around 97,000 flow logs. But reserving this much everytime would lead to memory wastage as not every flow log file would be of 10 mb. Hence, an initial capacity of 64667 is a good middle ground which ensures that at most there's only 1 resize of the hashMap and not much delay. We picked this particular number by assuming the average flow log file size to be 5 mb and a load factor of 0.75.
 
 ## Assumptions
@@ -152,7 +152,7 @@ It's given in the spec sheet the flow log file can go upto 10 mb, hence we can h
 ## Analysis
 
 To get an idea of how well-performant the code is, timestamps have been added at different checkpoints along the flow. This would give us an idea
-of how much time each step of the process is taking and if there are bottlenecks (if any).
+of how much time each step of the process is taking and identify the bottlenecks (if any).
 
 A sample output of the project is given below:
 
