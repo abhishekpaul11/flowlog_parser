@@ -22,13 +22,14 @@ public class Utils {
             return reader.readLine();
         } catch (IOException e) {
             System.err.println("Error loading timestamp: " + e.getMessage());
+            System.err.flush();
             return null;
         }
     }
 
-    public static boolean isMoreThanWeekOld(String timestamp) {
+    public static boolean isOlderThanAWeek(String timestamp) {
         if (timestamp == null) {
-            return false;
+            return true; // to force fetch from remote
         }
 
         try {
@@ -39,7 +40,7 @@ public class Utils {
             return duration.toDays() > 7;
         } catch (DateTimeParseException e) {
             System.err.println("Error parsing timestamp: " + e.getMessage());
-            return false;
+            return true;
         }
     }
 

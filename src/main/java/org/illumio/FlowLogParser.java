@@ -24,8 +24,11 @@ public class FlowLogParser {
     private void downloadProtocolNumbersCSV() {
         String lastUpdatedProtocolNumbers = Utils.loadTimestamp(Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH);
 
-        if (lastUpdatedProtocolNumbers == null ||
-                Utils.isMoreThanWeekOld(Utils.loadTimestamp(Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH))) {
+        if (lastUpdatedProtocolNumbers == null) {
+            System.out.println("No stored timestamp found. So fetching Protocol Numbers from remote call.");
+        }
+
+        if (lastUpdatedProtocolNumbers == null || Utils.isOlderThanAWeek(lastUpdatedProtocolNumbers)) {
             boolean isSuccess = FileDownloader.download(Constants.PROTOCOL_NUMBERS_CSV_DOWNLOAD_URL, Constants.PROTOCOL_NUMBERS_FILE_PATH);
             if (isSuccess) {
                 Utils.persistTimestamp(Constants.PROTOCOL_NUMBERS_LAST_UPDATED_TIME_FILE_PATH);
@@ -40,6 +43,9 @@ public class FlowLogParser {
                             "Checking if any earlier downloaded file is present.");
                 }
             }
+        }
+        else {
+            System.out.println("Using the saved Protocol Numbers fetched within the past week." );
         }
     }
 
