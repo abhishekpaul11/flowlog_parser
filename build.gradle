@@ -16,7 +16,7 @@ dependencies {
 }
 
 application {
-    mainClass = 'org.illumio.Main'
+    mainClass = 'org.illumio.FlowLogParser'
 }
 
 test {
